@@ -1,9 +1,27 @@
 var mqtt = require('mqtt')
 const DEVICENO = 'yjb0001'
 
+var env = process.argv[2];
+
 //设备状态
 const IDLE = 0  //空闲
 const OCCUPIED = 1 //使用中
+
+var MQTT_SERVER_URL = ""
+const MQTT_SERVER_URL_DEV = 'mqtt://123.56.216.122:1883'
+const MQTT_SERVER_URL_PRE = 'mqtt://139.196.84.116:1883'
+const MQTT_SERVER_URL_PRO = ''
+
+if(env === 'dev') {
+  MQTT_SERVER_URL = MQTT_SERVER_URL_DEV
+  console.log("mtqq dev")
+} else if(env === 'pre') {
+  MQTT_SERVER_URL = MQTT_SERVER_URL_PRE
+  console.log("mtqq pre")
+} else if(env === 'pro') {
+  MQTT_SERVER_URL = MQTT_SERVER_URL_PRO
+  console.log("mtqq pro")
+}
 
 const Device_Info = {
   deviceNo: DEVICENO,
@@ -22,11 +40,11 @@ const CONN_OPTION = {
   }
 }
 
-var client  = mqtt.connect('mqtt://123.56.216.122:1883', CONN_OPTION)
+var client  = mqtt.connect(MQTT_SERVER_URL, CONN_OPTION)
 
 //设备上线
 client.on('connect', function (connack) {
-  console.log("connected" )
+  console.log(MQTT_SERVER_URL + " connected" )
   var onlineMessage = {
     deviceNo: DEVICENO,
     time: Date.now(),
