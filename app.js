@@ -1,21 +1,21 @@
 var mqtt = require('mqtt')
-const DEVICEID = 'yjb0001'
+const DEVICENO = 'yjb0001'
 
 //设备状态
 const IDLE = 0  //空闲
 const OCCUPIED = 1 //使用中
 
 const Device_Info = {
-  deviceId: DEVICEID,
+  deviceNo: DEVICENO,
   status: IDLE,
 }
 
 const CONN_OPTION = {
-  clientId: DEVICEID,
+  clientId: DEVICENO,
   will: {
     topic: 'offline',
     payload: JSON.stringify({
-      deviceId: DEVICEID,
+      deviceNo: DEVICENO,
       time: Date.now(),
       message: '异常下线'
     })
@@ -28,14 +28,14 @@ var client  = mqtt.connect('mqtt://123.56.216.122:1883', CONN_OPTION)
 client.on('connect', function (connack) {
   console.log("connected" )
   var onlineMessage = {
-    deviceId: DEVICEID,
+    deviceNo: DEVICENO,
     time: Date.now(),
   }
   client.publish('online', JSON.stringify(onlineMessage))
   Device_Info.status = IDLE   //设备状态-->空闲
 
   var topics = []
-  topics.push('turnOn/' + DEVICEID)  //订阅开机消息
+  topics.push('turnOn/' + DEVICENO)  //订阅开机消息
 
   client.subscribe(topics, function (error) {
     if(error) {
@@ -48,40 +48,42 @@ client.on('connect', function (connack) {
 
 function handleTurnOn(message) {
   var Message = JSON.parse(message.toString())
-  var deviceId = Message.deviceId
+  var deviceNo = Message.deviceNo
   var socketId = Message.socketId
+  var userId = Message.userId
 
   if(Device_Info.status === IDLE) {
     var successMessage = {
       socketId: socketId,
-      deviceId: deviceId,
+      deviceNo: deviceNo,
+      userId: userId,
       time: Date.now(),
       status: OCCUPIED,
     }
     setTimeout(function () {
-      client.publish('turnOnSuccess/' + deviceId, JSON.stringify(successMessage), function (error) {
+      client.publish('turnOnSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
         if(error) {
           console.log("publish turnOnSuccess error:", error)
         } else {
           Device_Info.status = OCCUPIED //设备状态-->使用中
-          console.log("publish success, topic:", 'turnOnSuccess/' + deviceId)
+          console.log("publish success, topic:", 'turnOnSuccess/' + deviceNo)
         }
       })
     }, 1000)
   } else {
     var failedMessage = {
-      deviceId: deviceId,
+      deviceNo: deviceNo,
       time: Date.now(),
       status: OCCUPIED,
       message: "设备故障"
     }
 
     setTimeout(function () {
-      client.publish('turnOnFailed/' + deviceId, JSON.stringify(failedMessage), function (error) {
+      client.publish('turnOnFailed/' + deviceNo, JSON.stringify(failedMessage), function (error) {
         if(error) {
           console.log("publish turnOnFailed error:", error)
         } else {
-          console.log("publish success, topic:", 'turnOnFailed/' + deviceId)
+          console.log("publish success, topic:", 'turnOnFailed/' + deviceNo)
         }
       })
     }, 1000)
@@ -122,9 +124,9 @@ client.on('error', function () {
 
 //定时上报设备状态
 setInterval(function () {
-  var topic = 'deviceStatus/' + DEVICEID
+  var topic = 'deviceStatus/' + DEVICENO
   var statusMessage = {
-    deviceId: DEVICEID,
+    deviceNo: DEVICENO,
     time: Date.now(),
     status: IDLE,
   }
@@ -138,21 +140,21 @@ setInterval(function () {
 }, 1000)
 
 //10min后触发设备下线
-setTimeout(function () {
-  var offlineMessage = {
-    deviceId: DEVICEID,
-    time: Date.now(),
-    message: '正常下线',
-  }
-
-  client.publish('offline', JSON.stringify(offlineMessage), function (error) {
-    if(error) {
-      console.log("publish offline error:", error)
-    } else {
-      console.log("publish offline success!")
-      client.end()
-    }
-  })
-}, 10 * 60 * 1000)
+// setTimeout(function () {
+//   var offlineMessage = {
+//     deviceNo: DEVICENO,
+//     time: Date.now(),
+//     message: '正常下线',
+//   }
+//
+//   client.publish('offline', JSON.stringify(offlineMessage), function (error) {
+//     if(error) {
+//       console.log("publish offline error:", error)
+//     } else {
+//       console.log("publish offline success!")
+//       client.end()
+//     }
+//   })
+// }, 10 * 60 * 1000)
 
 
