@@ -88,6 +88,24 @@ function handleTurnOn(message) {
         }
       })
     }, 1000)
+
+    var finishMessage = {
+      socketId: socketId,
+      deviceNo: deviceNo,
+      userId: userId,
+      time: Date.now(),
+      status: IDLE,
+    }
+    setTimeout(function () {  //10min后干衣结束
+      client.publish('finish/' + deviceNo, JSON.stringify(finishMessage), function (error) {
+        if(error) {
+          console.log("publish finish error:", error)
+          return
+        }
+        Device_Info.status = IDLE //设备状态-->空闲
+        console.log("publish success, topic:", 'finish/' + deviceNo)
+      })
+    }, 1000 * 60 * 10)
   } else {
     var failedMessage = {
       deviceNo: deviceNo,
