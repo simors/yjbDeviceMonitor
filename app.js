@@ -164,7 +164,7 @@ setInterval(function () {
   var statusMessage = {
     deviceNo: DEVICENO,
     time: Date.now(),
-    status: IDLE,
+    status: Device_Info.status,
   }
   client.publish(topic, JSON.stringify(statusMessage), function (error) {
     if(error) {
