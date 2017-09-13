@@ -89,14 +89,14 @@ function handleTurnOn(message) {
       })
     }, 1000)
 
-    var finishMessage = {
-      socketId: socketId,
-      deviceNo: deviceNo,
-      userId: userId,
-      time: Date.now(),
-      status: IDLE,
-    }
     setTimeout(function () {  //2min后干衣结束
+      var finishMessage = {
+        socketId: socketId,
+        deviceNo: deviceNo,
+        userId: userId,
+        time: Date.now(),
+        status: IDLE,
+      }
       client.publish('finish/' + deviceNo, JSON.stringify(finishMessage), function (error) {
         if(error) {
           console.log("publish finish error:", error)
