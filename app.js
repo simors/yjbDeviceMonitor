@@ -96,7 +96,7 @@ function handleTurnOn(message) {
       time: Date.now(),
       status: IDLE,
     }
-    setTimeout(function () {  //10min后干衣结束
+    setTimeout(function () {  //2min后干衣结束
       client.publish('finish/' + deviceNo, JSON.stringify(finishMessage), function (error) {
         if(error) {
           console.log("publish finish error:", error)
@@ -105,7 +105,7 @@ function handleTurnOn(message) {
         Device_Info.status = IDLE //设备状态-->空闲
         console.log("publish success, topic:", 'finish/' + deviceNo)
       })
-    }, 1000 * 60 * 10)
+    }, 1000 * 60 * 2)
   } else {
     var failedMessage = {
       deviceNo: deviceNo,
