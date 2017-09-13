@@ -54,6 +54,7 @@ client.on('connect', function (connack) {
 
   var topics = []
   topics.push('turnOn/' + DEVICENO)  //订阅开机消息
+  topics.push('turnOff/' + DEVICENO) //订阅关机消息
 
   client.subscribe(topics, function (error) {
     if(error) {
@@ -71,14 +72,14 @@ function handleTurnOn(message) {
   var userId = Message.userId
 
   if(Device_Info.status === IDLE) {
-    var successMessage = {
-      socketId: socketId,
-      deviceNo: deviceNo,
-      userId: userId,
-      time: Date.now(),
-      status: OCCUPIED,
-    }
     setTimeout(function () {
+      var successMessage = {
+        socketId: socketId,
+        deviceNo: deviceNo,
+        userId: userId,
+        time: Date.now(),
+        status: OCCUPIED,
+      }
       client.publish('turnOnSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
         if(error) {
           console.log("publish turnOnSuccess error:", error)
@@ -89,7 +90,7 @@ function handleTurnOn(message) {
       })
     }, 1000)
 
-    setTimeout(function () {  //2min后干衣结束
+    setTimeout(function () {  //5min后干衣结束
       var finishMessage = {
         socketId: socketId,
         deviceNo: deviceNo,
@@ -105,16 +106,15 @@ function handleTurnOn(message) {
         Device_Info.status = IDLE //设备状态-->空闲
         console.log("publish success, topic:", 'finish/' + deviceNo)
       })
-    }, 1000 * 60 * 2)
+    }, 1000 * 60 * 5)
   } else {
-    var failedMessage = {
-      deviceNo: deviceNo,
-      time: Date.now(),
-      status: OCCUPIED,
-      message: "设备故障"
-    }
-
     setTimeout(function () {
+      var failedMessage = {
+        deviceNo: deviceNo,
+        time: Date.now(),
+        status: Device_Info.status,
+        message: "设备故障"
+      }
       client.publish('turnOnFailed/' + deviceNo, JSON.stringify(failedMessage), function (error) {
         if(error) {
           console.log("publish turnOnFailed error:", error)
@@ -125,6 +125,49 @@ function handleTurnOn(message) {
     }, 1000)
   }
 }
+//关机
+function handleTurnOff(message) {
+  var Message = JSON.parse(message.toString())
+  var deviceNo = Message.deviceNo
+  var socketId = Message.socketId
+  var userId = Message.userId
+  var orderId = Message.orderId
+
+  if(Device_Info.status === OCCUPIED) {
+    var successMessage = {
+      socketId: socketId,
+      deviceNo: deviceNo,
+      userId: userId,
+      orderId: orderId,
+      time: Date.now(),
+      status: IDLE,
+    }
+    client.publish('turnOffSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
+      if(error) {
+        console.log("publish turnOffSuccess error:", error)
+        return
+      }
+      Device_Info.status = IDLE //设备状态-->空闲
+      console.log("publish success, topic:", 'turnOffSuccess/' + deviceNo)
+    })
+
+  } else {
+    var failedMessage = {
+      deviceNo: deviceNo,
+      time: Date.now(),
+      status: Device_Info.status,
+      message: "设备状态异常"
+    }
+
+    client.publish('turnOffFailed' + deviceNo, JSON.stringify(failedMessage), function (error) {
+      if(error) {
+        console.log("publish turnOffFailed error:", error)
+        return
+      }
+      console.log("publish success, topic:", 'turnOffFailed/' + deviceNo)
+    })
+  }
+}
 
 client.on('message', function (topic, message, packet) {
   var topicLevel1 = topic.split('/')[0]
@@ -132,6 +175,9 @@ client.on('message', function (topic, message, packet) {
   switch (topicLevel1) {
     case 'turnOn':
       handleTurnOn(message)
+      break
+    case 'turnOff':
+      handleTurnOff(message)
       break
     default:
       console.log("未知消息 topic:", message.toString())
@@ -159,21 +205,21 @@ client.on('error', function () {
 })
 
 //定时上报设备状态
-setInterval(function () {
-  var topic = 'deviceStatus/' + DEVICENO
-  var statusMessage = {
-    deviceNo: DEVICENO,
-    time: Date.now(),
-    status: Device_Info.status,
-  }
-  client.publish(topic, JSON.stringify(statusMessage), function (error) {
-    if(error) {
-      console.log("publish deviceStatus error:", error)
-    } else {
-      // console.log("publish success, topic:", topic)
-    }
-  })
-}, 1000)
+// setInterval(function () {
+//   var topic = 'deviceStatus/' + DEVICENO
+//   var statusMessage = {
+//     deviceNo: DEVICENO,
+//     time: Date.now(),
+//     status: Device_Info.status,
+//   }
+//   client.publish(topic, JSON.stringify(statusMessage), function (error) {
+//     if(error) {
+//       console.log("publish deviceStatus error:", error)
+//     } else {
+//       // console.log("publish success, topic:", topic)
+//     }
+//   })
+// }, 1000)
 
 //10min后触发设备下线
 // setTimeout(function () {
