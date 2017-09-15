@@ -4,8 +4,12 @@ const DEVICENO = 'yjb0001'
 var env = process.argv[2];
 
 //设备状态
-const IDLE = 0  //空闲
-const OCCUPIED = 1 //使用中
+const DEVICE_STATUS_IDLE = 0          //空闲
+const DEVICE_STATUS_OCCUPIED = 1      //使用中
+const DEVICE_STATUS_OFFLINE = 2       //下线
+const DEVICE_STATUS_FAULT = 3         //故障
+const DEVICE_STATUS_MAINTAIN = 4      //维修保养
+const DEVICE_STATUS_UNREGISTER = 5    //未注册
 
 var MQTT_SERVER_URL = ""
 const MQTT_SERVER_URL_DEV = 'mqtt://123.56.216.122:1883'
@@ -25,7 +29,7 @@ if(env === 'dev') {
 
 const Device_Info = {
   deviceNo: DEVICENO,
-  status: IDLE,
+  status: DEVICE_STATUS_IDLE,
 }
 
 const CONN_OPTION = {
@@ -50,7 +54,7 @@ client.on('connect', function (connack) {
     time: Date.now(),
   }
   client.publish('online', JSON.stringify(onlineMessage))
-  Device_Info.status = IDLE   //设备状态-->空闲
+  Device_Info.status = DEVICE_STATUS_IDLE   //设备状态-->空闲
 
   var topics = []
   topics.push('turnOn/' + DEVICENO)  //订阅开机消息
@@ -63,6 +67,23 @@ client.on('connect', function (connack) {
       console.log("subscribe success, topics:", topics)
     }
   })
+
+  //模拟10min后发送故障消息
+  setTimeout(function () {
+    var breakdownMsg = {
+      deviceNo: DEVICENO,
+      errCode: 1,
+      time: Date.now(),
+    }
+    client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
+      if(error) {
+        console.log("publish breakdown error:", error)
+        return
+      }
+      Device_Info.status = DEVICE_STATUS_FAULT //设备状态-->故障中
+      console.log("publish success, topic:", 'breakdown/' + DEVICENO)
+    })
+  }, 1000 * 60 * 10)
 })
 
 function handleTurnOn(message) {
@@ -71,20 +92,20 @@ function handleTurnOn(message) {
   var socketId = Message.socketId
   var userId = Message.userId
 
-  if(Device_Info.status === IDLE) {
+  if(Device_Info.status === DEVICE_STATUS_IDLE) {
     setTimeout(function () {
       var successMessage = {
         socketId: socketId,
         deviceNo: deviceNo,
         userId: userId,
         time: Date.now(),
-        status: OCCUPIED,
+        status: DEVICE_STATUS_OCCUPIED,
       }
       client.publish('turnOnSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
         if(error) {
           console.log("publish turnOnSuccess error:", error)
         } else {
-          Device_Info.status = OCCUPIED //设备状态-->使用中
+          Device_Info.status = DEVICE_STATUS_OCCUPIED //设备状态-->使用中
           console.log("publish success, topic:", 'turnOnSuccess/' + deviceNo)
         }
       })
@@ -96,14 +117,14 @@ function handleTurnOn(message) {
         deviceNo: deviceNo,
         userId: userId,
         time: Date.now(),
-        status: IDLE,
+        status: DEVICE_STATUS_IDLE,
       }
       client.publish('finish/' + deviceNo, JSON.stringify(finishMessage), function (error) {
         if(error) {
           console.log("publish finish error:", error)
           return
         }
-        Device_Info.status = IDLE //设备状态-->空闲
+        Device_Info.status = DEVICE_STATUS_IDLE //设备状态-->空闲
         console.log("publish success, topic:", 'finish/' + deviceNo)
       })
     }, 1000 * 60 * 5)
@@ -133,21 +154,21 @@ function handleTurnOff(message) {
   var userId = Message.userId
   var orderId = Message.orderId
 
-  if(Device_Info.status === OCCUPIED) {
+  if(Device_Info.status === DEVICE_STATUS_OCCUPIED) {
     var successMessage = {
       socketId: socketId,
       deviceNo: deviceNo,
       userId: userId,
       orderId: orderId,
       time: Date.now(),
-      status: IDLE,
+      status: DEVICE_STATUS_IDLE,
     }
     client.publish('turnOffSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
       if(error) {
         console.log("publish turnOffSuccess error:", error)
         return
       }
-      Device_Info.status = IDLE //设备状态-->空闲
+      Device_Info.status = DEVICE_STATUS_IDLE //设备状态-->空闲
       console.log("publish success, topic:", 'turnOffSuccess/' + deviceNo)
     })
 
