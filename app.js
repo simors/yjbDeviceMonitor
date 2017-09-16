@@ -69,21 +69,21 @@ client.on('connect', function (connack) {
   })
 
   //模拟10min后发送故障消息
-  setTimeout(function () {
-    var breakdownMsg = {
-      deviceNo: DEVICENO,
-      errCode: 1,
-      time: Date.now(),
-    }
-    client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
-      if(error) {
-        console.log("publish breakdown error:", error)
-        return
-      }
-      Device_Info.status = DEVICE_STATUS_FAULT //设备状态-->故障中
-      console.log("publish success, topic:", 'breakdown/' + DEVICENO)
-    })
-  }, 1000 * 60 * 10)
+  // setTimeout(function () {
+  //   var breakdownMsg = {
+  //     deviceNo: DEVICENO,
+  //     errCode: 1,
+  //     time: Date.now(),
+  //   }
+  //   client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
+  //     if(error) {
+  //       console.log("publish breakdown error:", error)
+  //       return
+  //     }
+  //     Device_Info.status = DEVICE_STATUS_FAULT //设备状态-->故障中
+  //     console.log("publish success, topic:", 'breakdown/' + DEVICENO)
+  //   })
+  // }, 1000 * 60 * 10)
 })
 
 function handleTurnOn(message) {
