@@ -112,6 +112,9 @@ function handleTurnOn(message) {
     }, 1000)
 
     setTimeout(function () {  //5min后干衣结束
+      if(Device_Info.status != DEVICE_STATUS_OCCUPIED) {
+        return
+      }
       var finishMessage = {
         socketId: socketId,
         deviceNo: deviceNo,
