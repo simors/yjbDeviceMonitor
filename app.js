@@ -53,37 +53,43 @@ client.on('connect', function (connack) {
     deviceNo: DEVICENO,
     time: Date.now(),
   }
-  client.publish('online', JSON.stringify(onlineMessage))
-  Device_Info.status = DEVICE_STATUS_IDLE   //设备状态-->空闲
-
-  var topics = []
-  topics.push('turnOn/' + DEVICENO)  //订阅开机消息
-  topics.push('turnOff/' + DEVICENO) //订阅关机消息
-
-  client.subscribe(topics, function (error) {
+  client.publish('online', JSON.stringify(onlineMessage), function (error) {
     if(error) {
-      console.log("subscribe error", error)
-    } else {
-      console.log("subscribe success, topics:", topics)
+      console.log("publish online message error:", error)
+      return
     }
+    Device_Info.status = DEVICE_STATUS_IDLE   //设备状态-->空闲
+
+    var topics = []
+    topics.push('turnOn/' + DEVICENO)  //订阅开机消息
+    topics.push('turnOff/' + DEVICENO) //订阅关机消息
+
+    client.subscribe(topics, function (error) {
+      if(error) {
+        console.log("subscribe error", error)
+      } else {
+        console.log("subscribe success, topics:", topics)
+      }
+    })
+
+    // 模拟10min后发送故障消息
+    // setTimeout(function () {
+    //   var breakdownMsg = {
+    //     deviceNo: DEVICENO,
+    //     errCode: 1,
+    //     time: Date.now(),
+    //   }
+    //   client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
+    //     if(error) {
+    //       console.log("publish breakdown error:", error)
+    //       return
+    //     }
+    //     Device_Info.status = DEVICE_STATUS_FAULT //设备状态-->故障中
+    //     console.log("publish success, topic:", 'breakdown/' + DEVICENO)
+    //   })
+    // }, 1000 * 60 * 10)
   })
 
-  //模拟10min后发送故障消息
-  // setTimeout(function () {
-  //   var breakdownMsg = {
-  //     deviceNo: DEVICENO,
-  //     errCode: 1,
-  //     time: Date.now(),
-  //   }
-  //   client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
-  //     if(error) {
-  //       console.log("publish breakdown error:", error)
-  //       return
-  //     }
-  //     Device_Info.status = DEVICE_STATUS_FAULT //设备状态-->故障中
-  //     console.log("publish success, topic:", 'breakdown/' + DEVICENO)
-  //   })
-  // }, 1000 * 60 * 10)
 })
 
 function handleTurnOn(message) {
