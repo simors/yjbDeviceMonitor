@@ -1,7 +1,7 @@
 var mqtt = require('mqtt')
-const DEVICENO = 'yjb0001'
 
-var env = process.argv[2];
+var env = process.argv[2]
+const DEVICENO = process.argv[3]
 
 //设备状态
 const DEVICE_STATUS_IDLE = 0          //空闲
