@@ -47,11 +47,12 @@ const CONN_OPTION = {
   username: MQTT_SERVER_USERNAME,
   password: MQTT_SERVER_PWD,
   will: {
-    topic: 'offline',
+    topic: 'crash',
     payload: JSON.stringify({
-      deviceNo: DEVICENO,
-      time: Date.now(),
-      message: '异常下线'
+      deviceNo:   DEVICENO,     // 设备编号
+      time:       Date.now(),   // 时间戳
+      errCode:    100,          // 错误编码
+      message:    '异常下线'     // 错误消息
     })
   }
 }
@@ -62,8 +63,10 @@ var client  = mqtt.connect(MQTT_SERVER_URL, CONN_OPTION)
 client.on('connect', function (connack) {
   console.log(MQTT_SERVER_URL + " connected" )
   var onlineMessage = {
-    deviceNo: DEVICENO,
-    time: Date.now(),
+    deviceNo:         DEVICENO,       // 设备编号
+    ratedPower:       '2000',         // 额定功率，单位为瓦（W）
+    standbyPower:     '10',           // 待机功率，单位为瓦（W）
+    time:             Date.now(),     // 上线时间
   }
   client.publish('online', JSON.stringify(onlineMessage), function (error) {
     if(error) {
@@ -87,9 +90,10 @@ client.on('connect', function (connack) {
     // 模拟10min后发送故障消息
     // setTimeout(function () {
     //   var breakdownMsg = {
-    //     deviceNo: DEVICENO,
-    //     errCode: 1,
-    //     time: Date.now(),
+    //     deviceNo:   DEVICENO,       // 设备编号
+    //     errCode:    1,              // 错误编码
+    //     message:    '温度过高',      // 错误消息
+    //     time:       Date.now(),     // 时间戳
     //   }
     //   client.publish('breakdown/' + DEVICENO, JSON.stringify(breakdownMsg), function (error) {
     //     if(error) {
@@ -113,11 +117,12 @@ function handleTurnOn(message) {
   if(Device_Info.status === DEVICE_STATUS_IDLE) {
     setTimeout(function () {
       var successMessage = {
-        socketId: socketId,
-        deviceNo: deviceNo,
-        userId: userId,
-        time: Date.now(),
-        status: DEVICE_STATUS_OCCUPIED,
+        socketId: socketId,               // socket编号，由消息发送端传入
+        deviceNo: deviceNo,               // 设备编号，由消息发送端传入
+        userId:   userId,                 // 用户编号，由消息发送端传入
+        time:     Date.now(),             // 时间戳
+        status:   DEVICE_STATUS_OCCUPIED, // 设备状态
+        errCode:  0,                      // 故障码
       }
       client.publish('turnOnSuccess/' + deviceNo, JSON.stringify(successMessage), function (error) {
         if(error) {
@@ -139,6 +144,7 @@ function handleTurnOn(message) {
         userId: userId,
         time: Date.now(),
         status: DEVICE_STATUS_IDLE,
+        errCode: 0,
       }
       client.publish('finish/' + deviceNo, JSON.stringify(finishMessage), function (error) {
         if(error) {
@@ -152,10 +158,12 @@ function handleTurnOn(message) {
   } else {
     setTimeout(function () {
       var failedMessage = {
-        deviceNo: deviceNo,
+        socketId: socketId,               // socket编号，由消息发送端传入
+        deviceNo: deviceNo,               // 设备编号，由消息发送端传入
+        userId:   userId,                 // 用户编号，由消息发送端传入
         time: Date.now(),
         status: Device_Info.status,
-        message: "设备故障"
+        errCode:  100,                    // 故障码
       }
       client.publish('turnOnFailed/' + deviceNo, JSON.stringify(failedMessage), function (error) {
         if(error) {
