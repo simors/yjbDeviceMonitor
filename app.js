@@ -12,15 +12,25 @@ const DEVICE_STATUS_MAINTAIN = 4      //维修保养
 const DEVICE_STATUS_UNREGISTER = 5    //未注册
 
 var MQTT_SERVER_URL = ""
+var MQTT_SERVER_USERNAME = ""
+var MQTT_SERVER_PWD = ""
 const MQTT_SERVER_URL_DEV = 'mqtt://123.56.216.122:1883'
+const MQTT_SERVER_USERNAME_DEV = 'mqttClient01'
+const MQTT_SERVER_PWD_DEV = 'Yiijiabao20171108'
 const MQTT_SERVER_URL_PRE = 'mqtt://139.196.84.116:1883'
+const MQTT_SERVER_USERNAME_PRE = 'stageClient01'
+const MQTT_SERVER_PWD_PRE = 'Yiijiabao20171108'
 const MQTT_SERVER_URL_PRO = ''
 
 if(env === 'dev') {
   MQTT_SERVER_URL = MQTT_SERVER_URL_DEV
+  MQTT_SERVER_USERNAME = MQTT_SERVER_USERNAME_DEV
+  MQTT_SERVER_PWD = MQTT_SERVER_PWD_DEV
   console.log("mtqq dev")
 } else if(env === 'pre') {
   MQTT_SERVER_URL = MQTT_SERVER_URL_PRE
+  MQTT_SERVER_USERNAME = MQTT_SERVER_USERNAME_PRE
+  MQTT_SERVER_PWD = MQTT_SERVER_PWD_PRE
   console.log("mtqq pre")
 } else if(env === 'pro') {
   MQTT_SERVER_URL = MQTT_SERVER_URL_PRO
@@ -34,6 +44,8 @@ const Device_Info = {
 
 const CONN_OPTION = {
   clientId: DEVICENO,
+  username: MQTT_SERVER_USERNAME,
+  password: MQTT_SERVER_PWD,
   will: {
     topic: 'offline',
     payload: JSON.stringify({
